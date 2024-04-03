@@ -5,7 +5,7 @@ set -euo pipefail
 # TODO: Ensure this is the correct GitHub homepage where releases can be downloaded for zls.
 GH_REPO="https://github.com/zigtools/zls"
 TOOL_NAME="zls"
-TOOL_TEST="zls"
+TOOL_TEST="zls --version"
 
 fail() {
 	echo -e "asdf-$TOOL_NAME: $*"
@@ -27,7 +27,7 @@ sort_versions() {
 list_github_tags() {
 	git ls-remote --tags --refs "$GH_REPO" |
 		grep -o 'refs/tags/.*' | cut -d/ -f3- |
-		sed 's/^v//' # NOTE: You might want to adapt this sed to remove non-version strings from tags
+		sed 's/^v//'
 }
 
 list_all_versions() {
@@ -35,14 +35,29 @@ list_all_versions() {
 }
 
 download_release() {
-	local version filename url
+	local version filename url platform architecture
 	version="$1"
 	filename="$2"
 
-	url="$GH_REPO/archive/refs/tags/${version}.tar.gz"
+	case "$OSTYPE" in
+        darwin*) platform="macos" ;;
+        freebsd*) platform="freebsd" ;;
+        linux*) platform="linux" ;;
+        *) fail "Unsupported platform" ;;
+    esac
 
-	echo "* Downloading $TOOL_NAME release $version..."
+    case "$(uname -m)" in
+        aarch64* | arm64) architecture="aarch64" ;;
+        armv7*) architecture="armv7a" ;;
+        i686*) architecture="i386" ;;
+        riscv64*) architecture="riscv64" ;;
+        x86_64*) architecture="x86_64" ;;
+        *) fail "Unsupported architecture" ;;
+    esac
 
+	url="$GH_REPO/releases/download/${version}/zls-${architecture}-${platform}.tar.gz"
+
+	echo "* Downloading $TOOL_NAME release $version from: $url"
 	curl "${curl_opts[@]}" -H "Accept: application/octet-stream" -o "$filename" "$url" || fail "Could not download $url"
 }
 
@@ -58,13 +73,8 @@ install_version() {
 	(
 		mkdir -p "$install_path"
 
-		# Building
-		echo "* Building $TOOL_NAME $version at $ASDF_DOWNLOAD_PATH"
-
-		cd "$ASDF_DOWNLOAD_PATH" && zig build -Doptimize=ReleaseSafe
-
-		echo "* Installing $TOOL_NAME $version to $install_path"
-		cp -r "$ASDF_DOWNLOAD_PATH"/zig-out/bin/* "$install_path"
+		cp -r "$ASDF_DOWNLOAD_PATH"/bin/zls "$install_path"
+		chmod +x "$install_path"/zls
 
 		local tool_cmd
 		tool_cmd="$(echo "$TOOL_TEST" | cut -d' ' -f1)"
