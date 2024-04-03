@@ -40,20 +40,20 @@ download_release() {
 	filename="$2"
 
 	case "$OSTYPE" in
-        darwin*) platform="macos" ;;
-        freebsd*) platform="freebsd" ;;
-        linux*) platform="linux" ;;
-        *) fail "Unsupported platform" ;;
-    esac
+	darwin*) platform="macos" ;;
+	freebsd*) platform="freebsd" ;;
+	linux*) platform="linux" ;;
+	*) fail "Unsupported platform" ;;
+	esac
 
-    case "$(uname -m)" in
-        aarch64* | arm64) architecture="aarch64" ;;
-        armv7*) architecture="armv7a" ;;
-        i686*) architecture="i386" ;;
-        riscv64*) architecture="riscv64" ;;
-        x86_64*) architecture="x86_64" ;;
-        *) fail "Unsupported architecture" ;;
-    esac
+	case "$(uname -m)" in
+	aarch64* | arm64) architecture="aarch64" ;;
+	armv7*) architecture="armv7a" ;;
+	i686*) architecture="i386" ;;
+	riscv64*) architecture="riscv64" ;;
+	x86_64*) architecture="x86_64" ;;
+	*) fail "Unsupported architecture" ;;
+	esac
 
 	url="$GH_REPO/releases/download/${version}/zls-${architecture}-${platform}.tar.gz"
 
