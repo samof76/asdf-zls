@@ -31,8 +31,6 @@ list_github_tags() {
 }
 
 list_all_versions() {
-	# TODO: Adapt this. By default we simply list the tag names from GitHub releases.
-	# Change this function if zls has other means of determining installable versions.
 	list_github_tags
 }
 
@@ -41,11 +39,11 @@ download_release() {
 	version="$1"
 	filename="$2"
 
-	# TODO: Adapt the release URL convention for zls
-	url="$GH_REPO/archive/v${version}.tar.gz"
+	url="$GH_REPO/archive/refs/tags/${version}.tar.gz"
 
 	echo "* Downloading $TOOL_NAME release $version..."
-	curl "${curl_opts[@]}" -o "$filename" -C - "$url" || fail "Could not download $url"
+
+	curl "${curl_opts[@]}" -H "Accept: application/octet-stream" -o "$filename" "$url" || fail "Could not download $url"
 }
 
 install_version() {
@@ -59,9 +57,15 @@ install_version() {
 
 	(
 		mkdir -p "$install_path"
-		cp -r "$ASDF_DOWNLOAD_PATH"/* "$install_path"
 
-		# TODO: Assert zls executable exists.
+		# Building
+		echo "* Building $TOOL_NAME $version at $ASDF_DOWNLOAD_PATH"
+
+		cd "$ASDF_DOWNLOAD_PATH" && zig build -Doptimize=ReleaseSafe
+
+		echo "* Installing $TOOL_NAME $version to $install_path"
+		cp -r "$ASDF_DOWNLOAD_PATH"/zig-out/bin/* "$install_path"
+
 		local tool_cmd
 		tool_cmd="$(echo "$TOOL_TEST" | cut -d' ' -f1)"
 		test -x "$install_path/$tool_cmd" || fail "Expected $install_path/$tool_cmd to be executable."
